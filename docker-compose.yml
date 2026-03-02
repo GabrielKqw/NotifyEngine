@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: notify-postgres
+    environment:
+      POSTGRES_DB: notify
+      POSTGRES_USER: notify
+      POSTGRES_PASSWORD: notify
+    ports:
+      - "5432:5432"
+    volumes:
+      - notify_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notify -d notify"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: notify-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - notify_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    image: node:24-alpine
+    container_name: notify-migrate
+    working_dir: /app
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql://notify:notify@postgres:5432/notify?schema=public
+    volumes:
+      - ./:/app
+    command: sh -c "npm ci && npm run prisma:generate && npm run prisma:migrate:deploy"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: notify-api
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql://notify:notify@postgres:5432/notify?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: notify-worker
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql://notify:notify@postgres:5432/notify?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  notify_postgres_data:
+  notify_redis_data:
