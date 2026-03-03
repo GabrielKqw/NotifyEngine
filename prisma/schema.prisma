@@ -75,6 +75,7 @@ model Workspace {
   automations Automation[]
   executions  Execution[]
   logs        Log[]
+  smtpConfig  SmtpConfig?
 }
 
 model User {
@@ -280,4 +281,23 @@ model Log {
   @@index([executionId, createdAt])
   @@index([workspaceId, createdAt])
   @@index([level, createdAt])
+}
+
+model SmtpConfig {
+  id          String    @id @default(cuid())
+  workspaceId String    @unique
+  host        String
+  port        Int
+  secure      Boolean   @default(false)
+  username    String
+  password    String
+  fromName    String?
+  fromEmail   String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, isActive])
 }

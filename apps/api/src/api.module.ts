@@ -5,6 +5,7 @@ import { PrismaModule } from './common/prisma.module';
 import { HealthController } from './health.controller';
 import { AutomationsModule } from './automations/automations.module';
 import { ExecutionsModule } from './executions/executions.module';
+import { SmtpConfigModule } from './smtp-config/smtp-config.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ExecutionsModule } from './executions/executions.module';
     PrismaModule,
     AutomationsModule,
     ExecutionsModule,
+    SmtpConfigModule,
   ],
   controllers: [HealthController],
   providers: [],

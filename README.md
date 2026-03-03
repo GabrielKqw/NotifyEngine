@@ -42,6 +42,8 @@ Key behavior modeled:
 cp .env.example .env
 ```
 
+Set `APP_ENCRYPTION_KEY` in `.env` with a strong secret. SMTP passwords are stored encrypted using this key.
+
 2. Start infra:
 ```bash
 docker compose up -d postgres redis
@@ -81,11 +83,48 @@ Services:
 - `POST /automations`
 - `POST /automations/:id/trigger/manual`
 - `GET /executions/:id?workspaceId=<id>`
+- `GET /smtp-config?workspaceId=<id>`
+- `PUT /smtp-config`
+- `POST /smtp-config/test`
 
-## 6. Next Implementation Steps
+## 6. Action Config Examples
+
+`EMAIL_SMTP`:
+
+```json
+{
+  "type": "EMAIL_SMTP",
+  "config": {
+    "to": "user@example.com",
+    "subject": "Hello {{customer.name}}",
+    "bodyHtml": "<p>Order {{order.id}} confirmed</p>",
+    "bodyText": "Order {{order.id}} confirmed"
+  }
+}
+```
+
+`OUTBOUND_WEBHOOK`:
+
+```json
+{
+  "type": "OUTBOUND_WEBHOOK",
+  "config": {
+    "url": "https://example.com/hook",
+    "method": "POST",
+    "headers": {
+      "x-api-key": "secret"
+    },
+    "body": {
+      "event": "notify.execution"
+    }
+  }
+}
+```
+
+## 7. Next Implementation Steps
 
 1. Add auth + workspace RBAC.
-2. Implement SMTP driver in worker.
-3. Add trigger schedulers (cron, relative date, ICS sync).
+2. Add trigger schedulers (cron, relative date, ICS sync).
+3. Add template rendering from `Template` entity (today uses action-level content).
 4. Add frontend management panel.
 # NotifyEngine
