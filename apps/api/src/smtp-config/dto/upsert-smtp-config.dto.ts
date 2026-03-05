@@ -1,7 +1,9 @@
 import { Type } from 'class-transformer';
+import { SmtpProvider } from '@prisma/client';
 import {
   IsBoolean,
   IsEmail,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -15,18 +17,25 @@ export class UpsertSmtpConfigDto {
   @IsNotEmpty()
   workspaceId!: string;
 
+  @IsOptional()
+  @IsEnum(SmtpProvider)
+  provider?: SmtpProvider;
+
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  host!: string;
+  host?: string;
 
   @Type(() => Number)
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(65535)
-  port!: number;
+  port?: number;
 
+  @IsOptional()
   @IsBoolean()
-  secure!: boolean;
+  secure?: boolean;
 
   @IsString()
   @IsNotEmpty()

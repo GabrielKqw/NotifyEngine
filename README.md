@@ -87,6 +87,20 @@ Services:
 - `PUT /smtp-config`
 - `POST /smtp-config/test`
 
+Gmail setup (`PUT /smtp-config`):
+
+```json
+{
+  "workspaceId": "ws_123",
+  "provider": "GMAIL",
+  "username": "seuemail@gmail.com",
+  "password": "app-password-do-google",
+  "fromEmail": "seuemail@gmail.com",
+  "fromName": "Notify",
+  "isActive": true
+}
+```
+
 ## 6. Action Config Examples
 
 `EMAIL_SMTP`:

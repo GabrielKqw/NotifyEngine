@@ -919,12 +919,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UpsertSmtpConfigDto = void 0;
 const class_transformer_1 = __webpack_require__(18);
+const client_1 = __webpack_require__(8);
 const class_validator_1 = __webpack_require__(17);
 class UpsertSmtpConfigDto {
     workspaceId;
+    provider;
     host;
     port;
     secure;
@@ -941,18 +944,26 @@ __decorate([
     __metadata("design:type", String)
 ], UpsertSmtpConfigDto.prototype, "workspaceId", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.SmtpProvider),
+    __metadata("design:type", typeof (_a = typeof client_1.SmtpProvider !== "undefined" && client_1.SmtpProvider) === "function" ? _a : Object)
+], UpsertSmtpConfigDto.prototype, "provider", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], UpsertSmtpConfigDto.prototype, "host", void 0);
 __decorate([
     (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(1),
     (0, class_validator_1.Max)(65535),
     __metadata("design:type", Number)
 ], UpsertSmtpConfigDto.prototype, "port", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpsertSmtpConfigDto.prototype, "secure", void 0);
@@ -1033,6 +1044,7 @@ var _a;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SmtpConfigService = void 0;
 const common_1 = __webpack_require__(3);
+const client_1 = __webpack_require__(8);
 const prisma_service_1 = __webpack_require__(7);
 const nodemailer = __importStar(__webpack_require__(28));
 const secret_util_1 = __webpack_require__(29);
@@ -1051,13 +1063,16 @@ let SmtpConfigService = class SmtpConfigService {
         return this.sanitize(config);
     }
     async upsert(dto) {
+        const provider = dto.provider ?? client_1.SmtpProvider.CUSTOM;
+        const smtpSettings = this.resolveSmtpSettings(provider, dto.host, dto.port, dto.secure);
         const encryptedPassword = (0, secret_util_1.encryptSecret)(dto.password);
         const config = await this.prisma.smtpConfig.upsert({
             where: { workspaceId: dto.workspaceId },
             update: {
-                host: dto.host,
-                port: dto.port,
-                secure: dto.secure,
+                provider,
+                host: smtpSettings.host,
+                port: smtpSettings.port,
+                secure: smtpSettings.secure,
                 username: dto.username,
                 password: encryptedPassword,
                 fromName: dto.fromName,
@@ -1067,9 +1082,10 @@ let SmtpConfigService = class SmtpConfigService {
             },
             create: {
                 workspaceId: dto.workspaceId,
-                host: dto.host,
-                port: dto.port,
-                secure: dto.secure,
+                provider,
+                host: smtpSettings.host,
+                port: smtpSettings.port,
+                secure: smtpSettings.secure,
                 username: dto.username,
                 password: encryptedPassword,
                 fromName: dto.fromName,
@@ -1111,6 +1127,19 @@ let SmtpConfigService = class SmtpConfigService {
     sanitize(config) {
         const { password: _password, ...safe } = config;
         return safe;
+    }
+    resolveSmtpSettings(provider, host, port, secure) {
+        if (provider === client_1.SmtpProvider.GMAIL) {
+            return {
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+            };
+        }
+        if (!host || !port || secure == null) {
+            throw new common_1.BadRequestException('CUSTOM provider requires host, port and secure');
+        }
+        return { host, port, secure };
     }
 };
 exports.SmtpConfigService = SmtpConfigService;

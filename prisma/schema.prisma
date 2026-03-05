@@ -60,6 +60,11 @@ enum LogLevel {
   ERROR
 }
 
+enum SmtpProvider {
+  CUSTOM
+  GMAIL
+}
+
 model Workspace {
   id          String       @id @default(cuid())
   slug        String       @unique
@@ -286,6 +291,7 @@ model Log {
 model SmtpConfig {
   id          String    @id @default(cuid())
   workspaceId String    @unique
+  provider    SmtpProvider @default(CUSTOM)
   host        String
   port        Int
   secure      Boolean   @default(false)
